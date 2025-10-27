@@ -1,0 +1,26 @@
+# Core dependencies
+streamlit==1.31.1
+ollama==0.3.0
+chromadb==0.4.22
+pydantic==2.6.1
+
+# Document processing - use pre-built wheels
+PyMuPDF==1.24.0  # Updated version with ARM64 support
+pypdf==4.0.1
+python-docx==1.1.0
+
+# ML and embeddings
+sentence-transformers==2.3.1
+numpy==1.26.3
+
+# Utilities
+python-dotenv==1.0.0
+typing-extensions==4.9.0
+
+# PDF generation (for synthetic policies)
+reportlab==4.0.9
+markdown==3.5.2
+
+# Testing
+pytest==7.4.4
+pytest-cov==4.1.0

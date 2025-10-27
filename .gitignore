@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Vector database
+vectorstore/
+*.chromadb
+
+# Data files
+data/processed/*
+!data/processed/.gitkeep
+
+# Logs
+logs/*.log
+
+# Environment
+.env
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Outputs
+outputs/*
+!outputs/.gitkeep
