@@ -6,24 +6,11 @@ __pycache__/
 .Python
 venv/
 env/
-*.egg-info/
-dist/
-build/
+ENV/
 
-# Vector database
-vectorstore/
-*.chromadb
-
-# Data files
-data/processed/*
-!data/processed/.gitkeep
-
-# Logs
-logs/*.log
-
-# Environment
-.env
-.DS_Store
+# ChromaDB
+chroma_db/
+*.db
 
 # IDE
 .vscode/
@@ -31,6 +18,13 @@ logs/*.log
 *.swp
 *.swo
 
-# Outputs
-outputs/*
-!outputs/.gitkeep
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env.local
+
+# Logs
+*.log
+logs/
