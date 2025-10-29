@@ -1,6 +1,5 @@
-# Quick fix for related questions formatting
 """
-Complete RAG Chain orchestration for Finance House Policy Chatbot
+Complete RAG Chain orchestration for Finance House Policy Chatbot - IMPROVED
 """
 import sys
 from pathlib import Path
@@ -31,11 +30,6 @@ class PolicyAnswer(BaseModel):
     interpretation: str = Field(description="Brief interpretation of the policy")
 
 
-class RelatedQuestions(BaseModel):
-    """Related questions output"""
-    questions: List[str] = Field(description="List of 3-5 related questions from the policy")
-
-
 class FinanceHousePolicyChain:
     """
     Complete RAG chain for Finance House Policy Assistant
@@ -52,62 +46,58 @@ class FinanceHousePolicyChain:
         self.llm = ChatOllama(
             model=Config.LLM_MODEL,
             base_url=Config.OLLAMA_BASE_URL,
-            temperature=0.3,
+            temperature=0.1,  # Lower for more factual
             format='json'
         )
         
-        # Answer generation prompt
+        # IMPROVED answer generation prompt
         self.answer_prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are a knowledgeable policy assistant for Finance House.
+            ("system", """You are a precise policy assistant for Finance House. Your task is to provide detailed, specific answers based on the policy document content.
 
-Your task is to provide clear, accurate answers based ONLY on the provided policy documents.
+CRITICAL INSTRUCTIONS:
+1. Provide SPECIFIC details from the policy (numbers, criteria, requirements)
+2. If there are eligibility requirements (Band levels, tenure, amounts), STATE THEM EXPLICITLY
+3. Cite the ACTUAL section number (e.g., "Section 2.1", "Clause 3.2"), NOT "Chunk X"
+4. Be detailed and helpful - users need actionable information
+5. If the policy has conditions or exceptions, mention them
 
-INSTRUCTIONS:
-1. Answer the user's question directly and concisely (2-3 sentences)
-2. Cite the specific policy number, owner, and clause
-3. Provide interpretation in business-friendly language (not technical jargon)
-4. If information is unclear, say so - DO NOT make up information
-5. Be helpful and professional
+BAD ANSWER: "Yes, you can work from home if you meet requirements."
+GOOD ANSWER: "Yes, employees in Band 3-5 with minimum 12 months tenure can work from home. You must have manager approval and maintain a secure home office setup per IT security requirements."
 
-Return a JSON object with these fields:
-- answer: Direct answer to the question (2-3 sentences)
-- policy_number: The policy number (e.g., "POL-HR-002")
-- policy_owner: Department that owns the policy
-- relevant_clause: Specific section/clause reference
-- interpretation: Business-friendly interpretation
+Return JSON with:
+- answer: Detailed, specific answer with concrete details (3-5 sentences)
+- policy_number: Policy number (e.g., "POL-HR-002")
+- policy_owner: Department
+- relevant_clause: Actual section/clause number from the policy
+- interpretation: Brief summary
 
 Output ONLY valid JSON."""),
             ("user", """Question: {question}
 
-Intent: {intent}
-Domain: {domain}
-Selected Policy: {selected_policy}
-
-Relevant Policy Content:
+Policy Context:
 {context}
 
-Provide a complete answer based on the policy content above.""")
+Selected Policy: {selected_policy}
+Domain: {domain}
+
+Provide a detailed, specific answer with concrete details from the policy.""")
         ])
         
-        # Related questions prompt
+        # IMPROVED related questions prompt
         self.related_questions_prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are helping generate related questions that users might want to ask about a policy.
+            ("system", """Generate 3-5 specific, practical related questions that users might ask about this policy.
 
-Based on the policy content provided, generate 3-5 related questions that:
-1. Are directly answerable from THIS policy document
-2. Cover different aspects of the policy
-3. Are practical and commonly asked
-4. Are phrased as questions a new employee might ask
+Questions should:
+- Be directly answerable from the policy content shown
+- Be specific and actionable
+- Cover different aspects (eligibility, process, exceptions, requirements)
+- Sound like real employee questions
 
-Return a JSON object with:
-- questions: Array of 3-5 question strings (just the text, no objects)
+Return JSON: {"questions": ["Question 1?", "Question 2?", "Question 3?"]}
 
-Example format:
-{"questions": ["Question 1?", "Question 2?", "Question 3?"]}
-
-Output ONLY valid JSON."""),
+Output ONLY valid JSON with a "questions" array."""),
             ("user", """Policy: {policy_number}
-User's Original Question: {original_question}
+Original Question: {original_question}
 
 Policy Content:
 {context}
@@ -154,40 +144,28 @@ Generate 3-5 related questions.""")
         selected_policy: str,
         docs: List[Document]
     ) -> Tuple[PolicyAnswer, float]:
-        """
-        Generate structured answer from documents
-        
-        Args:
-            question: User's question
-            intent: Detected intent
-            selected_policy: Selected policy number
-            docs: Retrieved documents
-            
-        Returns:
-            Tuple of (PolicyAnswer, duration)
-        """
+        """Generate structured answer from documents"""
         start_time = time.time()
         
         try:
-            # Prepare context from documents
+            # Prepare context - use MORE context for better answers
             context = "\n\n".join([
-                f"[Chunk {i+1}]\n{doc.page_content}" 
-                for i, doc in enumerate(docs[:5])  # Use top 5 chunks
+                f"[Section {i+1}]\n{doc.page_content}" 
+                for i, doc in enumerate(docs[:8])  # Use top 8 chunks for more context
             ])
             
             # Generate answer
             prompt = self.answer_prompt.format_messages(
                 question=question,
-                intent=intent.primary_intent,
-                domain=intent.domain,
+                context=context,
                 selected_policy=selected_policy,
-                context=context
+                domain=intent.domain
             )
             
             response = self.llm.invoke(prompt)
             data = self._extract_json_from_response(response.content)
             
-            # Extract policy metadata from documents
+            # Extract policy metadata
             policy_metadata = {}
             for doc in docs:
                 if doc.metadata.get("policy_number") == selected_policy:
@@ -195,7 +173,7 @@ Generate 3-5 related questions.""")
                     break
             
             answer = PolicyAnswer(
-                answer=data.get("answer", "Unable to generate answer"),
+                answer=data.get("answer", "Unable to generate detailed answer. Please refer to the policy document."),
                 policy_number=data.get("policy_number", selected_policy),
                 policy_owner=data.get("policy_owner", policy_metadata.get("policy_owner", "Unknown")),
                 relevant_clause=data.get("relevant_clause", "See policy document"),
@@ -213,7 +191,7 @@ Generate 3-5 related questions.""")
             
             # Fallback answer
             return PolicyAnswer(
-                answer="I found relevant information but encountered an error generating the answer. Please refer to the policy document.",
+                answer="I found relevant information but encountered an error generating a detailed answer. Please refer to the policy document.",
                 policy_number=selected_policy,
                 policy_owner="Unknown",
                 relevant_clause="See policy document",
@@ -226,24 +204,12 @@ Generate 3-5 related questions.""")
         policy_number: str,
         docs: List[Document]
     ) -> Tuple[List[str], float]:
-        """
-        Generate related questions from policy content
-        
-        Args:
-            question: Original question
-            policy_number: Policy number
-            docs: Retrieved documents
-            
-        Returns:
-            Tuple of (list of questions, duration)
-        """
+        """Generate related questions from policy content"""
         start_time = time.time()
         
         try:
-            # Prepare context
-            context = "\n\n".join([
-                doc.page_content for doc in docs[:3]
-            ])
+            # Use first 3 chunks for context
+            context = "\n\n".join([doc.page_content for doc in docs[:3]])
             
             prompt = self.related_questions_prompt.format_messages(
                 policy_number=policy_number,
@@ -254,55 +220,47 @@ Generate 3-5 related questions.""")
             response = self.llm.invoke(prompt)
             data = self._extract_json_from_response(response.content)
             
+            # Extract questions - handle both list and dict formats
             questions = data.get("questions", [])
+            if not questions:
+                questions = data.get("related_questions", [])
             
-            # Ensure questions are strings, not dicts
-            cleaned_questions = []
+            # Clean questions
+            cleaned = []
             for q in questions:
                 if isinstance(q, dict):
-                    # Extract text from dict
-                    q_text = q.get('text', str(q))
-                    cleaned_questions.append(q_text)
-                else:
-                    cleaned_questions.append(str(q))
+                    q_text = q.get('text', q.get('question', str(q)))
+                    cleaned.append(q_text)
+                elif isinstance(q, str):
+                    cleaned.append(q)
             
-            # Ensure we have 3-5 questions
-            if len(cleaned_questions) < 3:
-                cleaned_questions.extend([
+            # Ensure 3-5 questions
+            if len(cleaned) < 3:
+                cleaned = [
                     f"What are the key requirements in {policy_number}?",
                     f"Who should I contact about {policy_number}?",
-                    f"When was {policy_number} last updated?"
-                ])
+                    f"Are there any exceptions to {policy_number}?"
+                ]
             
-            cleaned_questions = cleaned_questions[:5]  # Max 5 questions
+            cleaned = cleaned[:5]
             
             duration = time.time() - start_time
-            logger.info(f"Generated {len(cleaned_questions)} related questions in {duration:.2f}s")
+            logger.info(f"Generated {len(cleaned)} related questions in {duration:.2f}s")
             
-            return cleaned_questions, duration
+            return cleaned, duration
             
         except Exception as e:
             logger.error(f"Error generating related questions: {e}")
             duration = time.time() - start_time
             
-            # Fallback questions
             return [
-                f"What are the requirements in {policy_number}?",
-                f"Who manages {policy_number}?",
-                f"How do I comply with {policy_number}?"
+                f"What are the eligibility criteria in {policy_number}?",
+                f"What documents do I need for {policy_number}?",
+                f"How long does the {policy_number} process take?"
             ], duration
     
     def query(self, question: str, use_multi_query: bool = True) -> Dict[str, Any]:
-        """
-        Main query method - complete RAG pipeline
-        
-        Args:
-            question: User's question
-            use_multi_query: Whether to use multi-query retrieval
-            
-        Returns:
-            Complete response dictionary with answer and trace
-        """
+        """Main query method - complete RAG pipeline"""
         logger.info("=" * 60)
         logger.info(f"PROCESSING QUERY: {question}")
         logger.info("=" * 60)
@@ -313,7 +271,6 @@ Generate 3-5 related questions.""")
         
         try:
             # STEP 1: Intent Detection
-            step_start = time.time()
             intent, intent_duration = self.intent_detector.detect_intent(question)
             self.trace_collector.add_step(
                 "Query Understanding",
@@ -329,7 +286,7 @@ Generate 3-5 related questions.""")
             # STEP 2: Multi-Query Retrieval
             docs, retrieval_metadata = self.retriever.retrieve(
                 question, 
-                k=5, 
+                k=8,  # Get more chunks for better context
                 use_multi_query=use_multi_query
             )
             
@@ -368,9 +325,9 @@ Generate 3-5 related questions.""")
             )
             
             if not filtered_docs:
-                filtered_docs = docs  # Fallback to all docs
+                filtered_docs = docs
             
-            # STEP 4: Answer Generation
+            # STEP 4: Answer Generation (with more context)
             answer, answer_duration = self.generate_answer(
                 question, intent, policy_selection.selected_policy, filtered_docs
             )
@@ -434,7 +391,6 @@ Generate 3-5 related questions.""")
         except Exception as e:
             logger.error(f"Error processing query: {e}", exc_info=True)
             
-            # Error response
             return {
                 "success": False,
                 "question": question,
@@ -453,59 +409,3 @@ Generate 3-5 related questions.""")
                 },
                 "trace": {}
             }
-
-
-def test_rag_chain():
-    """Test the complete RAG chain"""
-    print("=" * 80)
-    print("TESTING COMPLETE RAG CHAIN")
-    print("=" * 80)
-    
-    # Initialize chain
-    chain = FinanceHousePolicyChain()
-    
-    # Test queries
-    test_queries = [
-        "Can I work from home full-time?",
-        "What laptop budget do I have as a Band 3 employee?",
-        "Can I accept gifts from clients?"
-    ]
-    
-    for query in test_queries:
-        print(f"\n{'=' * 80}")
-        print(f"QUERY: {query}")
-        print("=" * 80)
-        
-        response = chain.query(query)
-        
-        if response["success"]:
-            print(f"\n📋 ANSWER:")
-            print(f"{response['answer']['text']}")
-            print(f"\n📖 POLICY REFERENCE:")
-            print(f"  Policy: {response['answer']['policy_number']}")
-            print(f"  Owner: {response['answer']['policy_owner']}")
-            print(f"  Clause: {response['answer']['relevant_clause']}")
-            print(f"  Confidence: {response['answer']['confidence']:.0%}")
-            
-            print(f"\n💡 RELATED QUESTIONS:")
-            for i, q in enumerate(response['related_questions'], 1):
-                print(f"  {i}. {q}")
-            
-            print(f"\n⏱️  PERFORMANCE:")
-            print(f"  Total Time: {response['metadata']['total_duration']:.2f}s")
-            print(f"  Policies Searched: {response['metadata']['num_policies_searched']}")
-            print(f"  Chunks Used: {response['metadata']['chunks_used']}")
-            
-            print(f"\n🔍 TRACE SUMMARY:")
-            trace = response['trace']
-            for i, step in enumerate(trace.get('steps', []), 1):
-                print(f"  Step {i}: {step['step_name']} ({step['duration']:.2f}s)")
-        else:
-            print(f"\n❌ ERROR: {response['error']}")
-        
-        print("\n" + "=" * 80)
-        input("\nPress Enter to continue to next query...")
-
-
-if __name__ == "__main__":
-    test_rag_chain()
