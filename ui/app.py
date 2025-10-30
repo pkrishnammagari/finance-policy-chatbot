@@ -1,16 +1,13 @@
 """
-Finance House Policy Assistant - Clean Professional UI (Sidebar Fixed)
+Finance House Policy Assistant - FINAL - ALL TEXT DARK (NUCLEAR OPTION)
 """
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import streamlit as st
-import time
-from typing import Dict, Any
 from src.chain import FinanceHousePolicyChain
 
-# Page config
 st.set_page_config(
     page_title="Finance House Policy Assistant",
     page_icon="🏦",
@@ -18,315 +15,275 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Clean Professional CSS - Sidebar Enhanced
+# NUCLEAR CSS - FORCE DARK TEXT ON EVERY SINGLE STREAMLIT ELEMENT
 st.markdown("""
 <style>
-    /* Force clean white background */
-    .stApp {
-        background-color: #FFFFFF;
+    /* GLOBAL FORCE: WHITE BACKGROUND, DARK TEXT */
+    .stApp, .main, .block-container, body, html {
+        background-color: #ffffff !important;
+        color: #1f2937 !important;
     }
     
-    /* Main content area */
     .main .block-container {
         padding-top: 2rem;
-        padding-bottom: 1rem;
-        max-width: 1200px;
+        padding-bottom: 2rem;
+        max-width: 1400px;
     }
     
-    /* Professional header */
+    /* SIDEBAR */
+    section[data-testid="stSidebar"] {
+        background-color: #f8f9fa !important;
+        padding: 2rem 1rem;
+        border-right: 1px solid #e0e0e0;
+    }
+    
+    section[data-testid="stSidebar"] > div {
+        overflow-y: hidden !important;
+    }
+    
+    section[data-testid="stSidebar"] *, 
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] div,
+    section[data-testid="stSidebar"] span,
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2, 
+    section[data-testid="stSidebar"] h3,
+    section[data-testid="stSidebar"] h4,
+    section[data-testid="stSidebar"] h5,
+    section[data-testid="stSidebar"] h6 {
+        color: #1f2937 !important;
+    }
+    
+    /* FORCE ALL STREAMLIT TEXT ELEMENTS TO DARK */
+    .stMarkdown, 
+    .stMarkdown *,
+    .stText,
+    .stText *,
+    .stCaption,
+    .stCaption *,
+    div[data-testid="stMarkdownContainer"],
+    div[data-testid="stMarkdownContainer"] *,
+    div[data-testid="stText"],
+    div[data-testid="stText"] * {
+        color: #1f2937 !important;
+    }
+    
+    /* SPINNER TEXT - THE PROBLEM CHILD */
+    .stSpinner,
+    .stSpinner > div,
+    .stSpinner > div > div,
+    .stSpinner *,
+    div[data-testid="stStatusWidget"],
+    div[data-testid="stStatusWidget"] *,
+    div[data-testid="stStatusWidget"] div,
+    div[data-testid="stStatusWidget"] p {
+        color: #1f2937 !important;
+    }
+    
+    /* EXPANDER */
+    div[data-testid="stExpander"],
+    div[data-testid="stExpander"] *,
+    div[data-testid="stExpander"] p,
+    div[data-testid="stExpander"] div,
+    div[data-testid="stExpander"] span {
+        color: #1f2937 !important;
+    }
+    
+    div[data-testid="stExpander"] {
+        border: 2px solid #3b82f6 !important;
+        border-radius: 8px !important;
+        background-color: #ffffff !important;
+        margin: 1rem 0 !important;
+    }
+    
+    div[data-testid="stExpander"] summary {
+        background-color: #1e40af !important;
+        color: white !important;
+        padding: 0.75rem 1rem !important;
+        border-radius: 6px !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Header */
     .main-header {
-        background: linear-gradient(135deg, #1A3A5C 0%, #2C5282 100%);
-        padding: 2.5rem 2rem;
-        border-radius: 8px;
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        padding: 2rem;
+        border-radius: 10px;
         margin-bottom: 2rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     
     .main-header h1 {
-        color: #FFFFFF;
+        color: white !important;
         margin: 0;
-        font-size: 2.2rem;
+        font-size: 2rem;
         font-weight: 600;
-        letter-spacing: -0.5px;
     }
     
     .main-header p {
-        color: #E8F0F8;
+        color: #e0f2fe !important;
         margin: 0.5rem 0 0 0;
         font-size: 1rem;
-        font-weight: 400;
     }
     
-    /* User message */
-    .user-msg {
-        background-color: #F8FAFC;
-        border-left: 3px solid #1A3A5C;
-        padding: 1.2rem 1.5rem;
+    /* Question */
+    .user-question {
+        background-color: #eff6ff;
+        border-left: 4px solid #3b82f6;
+        padding: 1rem;
         margin: 1.5rem 0;
-        border-radius: 4px;
+        border-radius: 8px;
     }
     
-    .user-msg .label {
-        color: #1A3A5C;
+    .user-question .label {
+        color: #1e40af !important;
         font-weight: 600;
         font-size: 0.875rem;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
         margin-bottom: 0.5rem;
         display: block;
     }
     
-    .user-msg .content {
-        color: #2C3E50;
-        font-size: 1.05rem;
-        line-height: 1.6;
+    .user-question .content {
+        color: #1e40af !important;
+        font-size: 1.1rem;
     }
     
-    /* Assistant message */
-    .bot-msg {
-        background-color: #FFFFFF;
-        border: 1px solid #E0E7EF;
-        border-left: 3px solid #10B981;
+    /* Answer */
+    .assistant-answer {
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-left: 4px solid #10b981;
         padding: 1.5rem;
         margin: 1.5rem 0;
-        border-radius: 4px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
     
-    .bot-msg .label {
-        color: #10B981;
+    .assistant-answer .label {
+        color: #059669 !important;
         font-weight: 600;
         font-size: 0.875rem;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
         margin-bottom: 1rem;
         display: block;
     }
     
-    .bot-msg .content {
-        color: #2C3E50;
+    .assistant-answer .content {
+        color: #1f2937 !important;
         font-size: 1.05rem;
         line-height: 1.7;
     }
     
-    /* Policy reference box */
-    .policy-box {
-        background-color: #FFFBF0;
-        border: 1px solid #F0E5CC;
-        border-left: 3px solid #C9A961;
-        padding: 1.2rem 1.5rem;
-        margin: 1.5rem 0;
-        border-radius: 4px;
-    }
-    
-    .policy-box .title {
-        color: #8B7355;
-        font-weight: 600;
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 1rem;
-        display: block;
-    }
-    
-    .policy-box .item {
-        color: #5A4A3A;
-        font-size: 0.95rem;
-        line-height: 1.8;
-        margin: 0.3rem 0;
-    }
-    
-    .policy-box .item strong {
-        color: #3A2A1A;
-        font-weight: 600;
-    }
-    
-    .confidence-high {
-        color: #059669;
-        font-weight: 600;
-    }
-    
-    .confidence-med {
-        color: #D97706;
-        font-weight: 600;
-    }
-    
-    /* Related questions box */
-    .related-box {
-        background-color: #F0F9FF;
-        border: 1px solid #DBEAFE;
-        padding: 1.2rem 1.5rem;
+    /* Policy reference */
+    .policy-reference {
+        background-color: #fef3c7;
+        border: 1px solid #fde047;
+        border-left: 4px solid #eab308;
+        padding: 1rem;
         margin: 1rem 0;
-        border-radius: 4px;
+        border-radius: 6px;
     }
     
-    .related-box .title {
-        color: #1E40AF;
+    .policy-reference .title {
+        color: #713f12 !important;
         font-weight: 600;
         font-size: 0.875rem;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 0.8rem;
+        margin-bottom: 0.75rem;
         display: block;
     }
     
-    .related-box .question {
-        color: #3B5998;
+    .policy-reference .item {
+        color: #854d0e !important;
+        margin: 0.4rem 0;
         font-size: 0.95rem;
-        line-height: 1.6;
-        margin: 0.5rem 0;
     }
+    
+    .policy-reference .item strong {
+        color: #713f12 !important;
+    }
+    
+    .confidence-high { color: #059669 !important; font-weight: 600; }
+    .confidence-medium { color: #d97706 !important; font-weight: 600; }
     
     /* Metrics */
     .metrics {
-        color: #64748B;
-        font-size: 0.85rem;
+        color: #1f2937 !important;
+        font-size: 0.95rem;
+        font-weight: 500;
         margin: 1rem 0;
-        padding: 0.5rem 0;
-        border-top: 1px solid #F1F5F9;
+        padding: 0.75rem;
+        background-color: #f9fafb;
+        border-radius: 6px;
+        border: 1px solid #e5e7eb;
     }
     
-    /* SIDEBAR STYLING - ENHANCED */
-    section[data-testid="stSidebar"] {
-        background-color: #F8FAFC;
-        border-right: 1px solid #E2E8F0;
-        padding-top: 1rem !important;
-    }
-    
-    /* Sidebar headings - BIGGER and BOLDER */
-    section[data-testid="stSidebar"] h3 {
-        color: #1A3A5C !important;
-        font-weight: 700 !important;
-        font-size: 1.3rem !important;
-        margin: 1.5rem 0 1rem 0 !important;
-        padding-bottom: 0.6rem !important;
-        border-bottom: 3px solid #1A3A5C !important;
-        letter-spacing: -0.3px !important;
-    }
-    
-    /* First heading (About) - extra spacing at top */
-    section[data-testid="stSidebar"] h3:first-of-type {
-        margin-top: 0 !important;
-    }
-    
-    /* Sidebar info box - ENHANCED with darker border */
-    section[data-testid="stSidebar"] .stAlert {
-        background-color: #FFFFFF !important;
-        border: 2px solid #2C5282 !important;
-        border-radius: 8px !important;
-        padding: 1.2rem !important;
-        margin-bottom: 1.5rem !important;
-        box-shadow: 0 1px 4px rgba(26, 58, 92, 0.1) !important;
-    }
-    
-    section[data-testid="stSidebar"] .stAlert p {
-        color: #2C3E50 !important;
-        font-size: 0.9rem !important;
-        line-height: 1.7 !important;
-        margin: 0.4rem 0 !important;
-    }
-    
-    section[data-testid="stSidebar"] .stAlert strong {
-        color: #1A3A5C !important;
-        font-weight: 600 !important;
-    }
-    
-    /* Sidebar sample question buttons - DARKER BOXES */
-    section[data-testid="stSidebar"] .stButton button {
-        background-color: #FFFFFF !important;
-        color: #2C3E50 !important;
-        border: 2px solid #94A3B8 !important;
-        border-radius: 6px !important;
-        padding: 0.7rem 1rem !important;
-        font-size: 0.95rem !important;
-        font-weight: 500 !important;
-        transition: all 0.2s !important;
-        text-align: left !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
-    }
-    
-    section[data-testid="stSidebar"] .stButton button:hover {
-        background-color: #E8F2FC !important;
-        border-color: #1A3A5C !important;
-        color: #1A3A5C !important;
-        font-weight: 600 !important;
-        box-shadow: 0 2px 6px rgba(26, 58, 92, 0.15) !important;
-    }
-    
-    /* Input section heading */
-    h3 {
-        color: #1A3A5C !important;
-        font-weight: 600 !important;
-        margin-top: 2rem !important;
-    }
-    
-    /* Input area */
+    /* Text input */
     .stTextInput input {
-        border-radius: 4px !important;
-        border: 1px solid #CBD5E1 !important;
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        border: 2px solid #d1d5db !important;
+        border-radius: 8px !important;
         padding: 0.75rem 1rem !important;
         font-size: 1rem !important;
-        color: #2C3E50 !important;
     }
     
     .stTextInput input:focus {
-        border-color: #1A3A5C !important;
-        box-shadow: 0 0 0 2px rgba(26, 58, 92, 0.1) !important;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
     }
     
-    /* Send button */
-    .stButton button[kind="primary"] {
-        background-color: #1A3A5C !important;
-        color: #FFFFFF !important;
+    .stTextInput input::placeholder {
+        color: #9ca3af !important;
+    }
+    
+    /* Buttons */
+    .stButton button {
+        background-color: #1e40af !important;
+        color: white !important;
         border: none !important;
-        border-radius: 4px !important;
-        padding: 0.75rem 1.5rem !important;
+        border-radius: 8px !important;
+        padding: 0.75rem 2rem !important;
         font-weight: 600 !important;
-        transition: all 0.2s !important;
+        font-size: 1rem !important;
+        cursor: pointer !important;
     }
     
-    .stButton button[kind="primary"]:hover {
-        background-color: #2C5282 !important;
-        box-shadow: 0 2px 8px rgba(26, 58, 92, 0.2) !important;
+    .stButton button:hover {
+        background-color: #1e3a8a !important;
     }
     
-    /* Success message */
-    .stSuccess {
-        background-color: #D1FAE5 !important;
-        color: #065F46 !important;
-        font-weight: 600 !important;
-        border: 1px solid #10B981 !important;
-        padding: 0.75rem 1rem !important;
-        border-radius: 4px !important;
+    /* Trace */
+    .trace-step {
+        background-color: #ffffff;
+        border-left: 3px solid #3b82f6;
+        padding: 0.75rem;
+        margin: 0.75rem 0;
+        border-radius: 4px;
+        border: 1px solid #e5e7eb;
     }
     
-    /* Hide Streamlit branding */
+    .trace-step-title {
+        color: #1f2937 !important;
+        font-weight: 700 !important;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+    
+    .trace-step-detail,
+    .trace-step-detail * {
+        color: #1f2937 !important;
+        font-size: 0.875rem;
+        margin: 0.25rem 0;
+        font-family: 'Courier New', monospace;
+    }
+    
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    
-    /* Clean scrollbar */
-    ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
-    
-    ::-webkit-scrollbar-track {
-        background: #F1F5F9;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-        background: #CBD5E1;
-        border-radius: 4px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-        background: #94A3B8;
-    }
 </style>
 """, unsafe_allow_html=True)
 
-
-# Initialize session state
 if 'rag_chain' not in st.session_state:
     with st.spinner("🔄 Initializing Policy Assistant..."):
         st.session_state.rag_chain = FinanceHousePolicyChain()
@@ -337,8 +294,31 @@ if 'chat_history' not in st.session_state:
 if 'query_count' not in st.session_state:
     st.session_state.query_count = 0
 
+with st.sidebar:
+    st.markdown("## 📚 About")
+    st.markdown("""
+    **Finance House Policy Assistant** uses advanced AI to help you understand and navigate organizational policies.
+    
+    ### Features:
+    - 🔍 Multi-Query RAG
+    - 🎯 Intent Detection
+    - 📋 10 Policy Documents
+    - 🔄 Real-time Processing
+    
+    ### How to Use:
+    1. Type your policy question below
+    2. Get instant, accurate answers
+    3. Review policy references
+    4. Check AI reasoning process
+    """)
+    
+    st.markdown("---")
+    
+    if st.button("🗑️ Clear Chat", use_container_width=True):
+        st.session_state.chat_history = []
+        st.session_state.query_count = 0
+        st.rerun()
 
-# Header
 st.markdown("""
 <div class="main-header">
     <h1>🏦 Finance House Policy Assistant</h1>
@@ -346,194 +326,98 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+for entry in st.session_state.chat_history:
+    st.markdown(f"""
+    <div class="user-question">
+        <span class="label">Your Question</span>
+        <div class="content">{entry['question']}</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    response = entry['response']
+    answer = response['answer']
+    
+    st.markdown(f"""
+    <div class="assistant-answer">
+        <span class="label">Policy Assistant Answer</span>
+        <div class="content">{answer['text']}</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    conf_class = "confidence-high" if answer.get('confidence', 0) >= 0.8 else "confidence-medium"
+    st.markdown(f"""
+    <div class="policy-reference">
+        <span class="title">📋 POLICY REFERENCE</span>
+        <div class="item"><strong>Policy:</strong> {answer.get('policy_number', 'N/A')}</div>
+        <div class="item"><strong>Owner:</strong> {answer.get('policy_owner', 'N/A')}</div>
+        <div class="item"><strong>Section:</strong> {answer.get('relevant_clause', 'N/A')}</div>
+        <div class="item"><strong>Confidence:</strong> <span class="{conf_class}">{answer.get('confidence', 0):.0%}</span></div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    metadata = response.get('metadata', {})
+    st.markdown(f"""
+    <div class="metrics">
+        ⏱️ {metadata.get('total_duration', 0):.1f}s | 
+        📊 Policies Searched: {metadata.get('num_policies_searched', 0)} | 
+        📄 Sections Analyzed: {metadata.get('chunks_used', 0)}
+    </div>
+    """, unsafe_allow_html=True)
+    
+    with st.expander("🔍 View AI Reasoning Process", expanded=False):
+        trace = response.get('trace', {})
+        if trace and 'steps' in trace:
+            trace_html = ""
+            for i, step in enumerate(trace['steps'], 1):
+                step_name = step.get('step_name', 'Unknown')
+                duration = step.get('duration', 0)
+                data = step.get('data', {})
+                
+                trace_html += f'<div class="trace-step">'
+                trace_html += f'<div class="trace-step-title">Step {i}: {step_name} ({duration:.2f}s)</div>'
+                
+                for key, value in data.items():
+                    if isinstance(value, list) and len(value) > 0:
+                        trace_html += f'<div class="trace-step-detail"><strong>{key}:</strong></div>'
+                        for item in value[:3]:
+                            trace_html += f'<div class="trace-step-detail">  • {item}</div>'
+                    elif isinstance(value, dict):
+                        trace_html += f'<div class="trace-step-detail"><strong>{key}:</strong> {str(value)[:100]}...</div>'
+                    else:
+                        trace_html += f'<div class="trace-step-detail"><strong>{key}:</strong> {value}</div>'
+                
+                trace_html += '</div>'
+            
+            st.markdown(trace_html, unsafe_allow_html=True)
+        else:
+            st.info("No trace data available for this query.")
 
-# Sidebar - About at the very top
-with st.sidebar:
-    st.markdown("### 📚 About")
-    st.info("""
-    **Finance House Policy Assistant** uses advanced AI to provide accurate, policy-based answers.
-    
-    **Features:**
-    
-    • Multi-Query RAG  
-    • Intent Detection  
-    • 10 Policy Documents
-    """)
-    
-    st.markdown("### 💡 Sample Questions")
-    
-    sample_qs = [
-        "Can I work from home?",
-        "What laptop budget do I have?",
-        "How do I claim travel expenses?",
-        "Can I accept gifts from clients?",
-        "How much vacation do I have?"
-    ]
-    
-    for q in sample_qs:
-        if st.button(q, key=f"btn_{q}", use_container_width=True):
-            st.session_state.pending_query = q
-            st.rerun()
-    
-    st.markdown("---")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Queries", st.session_state.query_count)
-    with col2:
-        st.metric("Policies", "10")
-    
-    st.markdown("")
-    if st.button("🗑️ Clear Chat", use_container_width=True, type="secondary"):
-        st.session_state.chat_history = []
-        st.session_state.query_count = 0
-        st.rerun()
-
-
-# Display chat history
-for msg in st.session_state.chat_history:
-    if msg['type'] == 'user':
-        st.markdown(f"""
-        <div class="user-msg">
-            <span class="label">Your Question</span>
-            <div class="content">{msg['content']}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    elif msg['type'] == 'assistant':
-        resp = msg['response']
-        ans = resp['answer']
-        
-        # Answer
-        st.markdown(f"""
-        <div class="bot-msg">
-            <span class="label">Policy Assistant Answer</span>
-            <div class="content">{ans['text']}</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Policy Reference
-        conf_class = "confidence-high" if ans['confidence'] >= 0.8 else "confidence-med"
-        st.markdown(f"""
-        <div class="policy-box">
-            <span class="title">📋 Policy Reference</span>
-            <div class="item"><strong>Policy:</strong> {ans['policy_number']}</div>
-            <div class="item"><strong>Owner:</strong> {ans['policy_owner']}</div>
-            <div class="item"><strong>Section:</strong> {ans['relevant_clause']}</div>
-            <div class="item"><strong>Confidence:</strong> <span class="{conf_class}">{ans['confidence']:.0%}</span></div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Related Questions
-        if resp.get('related_questions'):
-            questions_html = "\n".join([
-                f'<div class="question">{i}. {q}</div>' 
-                for i, q in enumerate(resp['related_questions'], 1)
-            ])
-            st.markdown(f"""
-            <div class="related-box">
-                <span class="title">💡 Related Questions</span>
-                {questions_html}
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Metrics
-        meta = resp['metadata']
-        st.markdown(f"""
-        <div class="metrics">
-            ⏱️ Response Time: {meta.get('total_duration', 0):.1f}s  |  
-            📊 Policies Searched: {meta.get('num_policies_searched', 0)}  |  
-            📄 Sections Analyzed: {meta.get('chunks_used', 0)}
-        </div>
-        """, unsafe_allow_html=True)
-
-
-# Handle pending query from sidebar
-if 'pending_query' in st.session_state and st.session_state.pending_query:
-    query = st.session_state.pending_query
-    st.session_state.pending_query = None
-    
-    # Add to history
-    st.session_state.chat_history.append({
-        'type': 'user',
-        'content': query
-    })
-    
-    # Process
-    with st.spinner("Processing your question..."):
-        response = st.session_state.rag_chain.query(query)
-    
-    if response['success']:
-        st.session_state.chat_history.append({
-            'type': 'assistant',
-            'response': response
-        })
-        st.session_state.query_count += 1
-    else:
-        st.error(f"Error: {response.get('error', 'Unknown error')}")
-    
-    st.rerun()
-
-
-# INPUT AT BOTTOM
 st.markdown("---")
-st.markdown("### 💬 Ask a Question")
+st.markdown('<h3 style="color: #1f2937 !important; font-weight: 600;">💬 Ask a Question</h3>', unsafe_allow_html=True)
 
 col1, col2 = st.columns([5, 1])
 
 with col1:
-    user_input = st.text_input(
-        "Type your question here...",
-        placeholder="e.g., What are the requirements for remote work?",
-        label_visibility="collapsed",
-        key="user_input_box"
+    user_question = st.text_input(
+        "Type your policy question here...",
+        key=f"user_input_{st.session_state.query_count}",
+        placeholder="e.g., Can I work from home?",
+        label_visibility="collapsed"
     )
 
 with col2:
-    send_clicked = st.button("Send", use_container_width=True, type="primary")
+    ask_button = st.button("Send", type="primary", use_container_width=True)
 
-if send_clicked and user_input:
-    # Add to history
-    st.session_state.chat_history.append({
-        'type': 'user',
-        'content': user_input
-    })
-    
-    # Process with progress
-    with st.spinner("Processing your question..."):
-        progress = st.progress(0)
-        status = st.empty()
+if ask_button and user_question:
+    with st.spinner("🔄 Processing your question..."):
+        response = st.session_state.rag_chain.query(user_question)
         
-        status.info("🔍 Understanding your question...")
-        progress.progress(20)
-        time.sleep(0.2)
-        
-        status.info("🔄 Generating search strategies...")
-        progress.progress(40)
-        time.sleep(0.2)
-        
-        status.info("📚 Searching policy documents...")
-        progress.progress(60)
-        
-        response = st.session_state.rag_chain.query(user_input)
-        
-        status.info("🎯 Selecting most relevant policy...")
-        progress.progress(80)
-        time.sleep(0.2)
-        
-        status.info("✍️ Generating detailed answer...")
-        progress.progress(100)
-        time.sleep(0.2)
-        
-        status.empty()
-        progress.empty()
-    
-    if response['success']:
-        st.session_state.chat_history.append({
-            'type': 'assistant',
-            'response': response
-        })
-        st.session_state.query_count += 1
-    else:
-        st.error(f"❌ Error: {response.get('error', 'Unknown error')}")
-    
-    st.rerun()
+        if response.get('success'):
+            st.session_state.chat_history.append({
+                'question': user_question,
+                'response': response
+            })
+            st.session_state.query_count += 1
+            st.rerun()
+        else:
+            st.error(f"Error: {response.get('error', 'Unknown error occurred')}")
