@@ -1,5 +1,5 @@
 """
-Complete RAG Chain orchestration for Finance House Policy Chatbot - IMPROVED WITH SAFE FIXES
+Complete RAG Chain orchestration for Finance House Policy Chatbot - IMPROVED
 """
 import sys
 from pathlib import Path
@@ -50,7 +50,7 @@ class FinanceHousePolicyChain:
             format='json'
         )
         
-        # IMPROVED answer generation prompt WITH OPINION GUARDRAIL (FIX #1)
+        # IMPROVED answer generation prompt
         self.answer_prompt = ChatPromptTemplate.from_messages([
             ("system", """You are a precise policy assistant for Finance House. Your task is to provide detailed, specific answers based on the policy document content.
 
@@ -60,18 +60,6 @@ CRITICAL INSTRUCTIONS:
 3. Cite the ACTUAL section number (e.g., "Section 2.1", "Clause 3.2"), NOT "Chunk X"
 4. Be detailed and helpful - users need actionable information
 5. If the policy has conditions or exceptions, mention them
-
-# NEW (Complete with facts):
-⚠️ IMPORTANT - OPINION DETECTION:
-If the question asks for your OPINION (e.g., "Do you think...", "Is it fair...", "Should the policy..."):
-1. Begin with: "I can provide factual information about the policy, but I cannot offer personal opinions."
-2. Then provide 3-5 specific FACTS from the policy such as:
-   - Eligibility criteria (Band levels, tenure, requirements)
-   - Process steps (how to apply, approval timeline)
-   - Key benefits or limitations
-   - Important conditions or exceptions
-3. Format as JSON answer with these facts, NOT opinions.
-
 
 BAD ANSWER: "Yes, you can work from home if you meet requirements."
 GOOD ANSWER: "Yes, employees in Band 3-5 with minimum 12 months tenure can work from home. You must have manager approval and maintain a secure home office setup per IT security requirements."
@@ -95,35 +83,31 @@ Domain: {domain}
 Provide a detailed, specific answer with concrete details from the policy.""")
         ])
         
-        # IMPROVED related questions prompt WITH CONTEXTUAL LOGIC (FIX #2)
+        # IMPROVED related questions prompt
         self.related_questions_prompt = ChatPromptTemplate.from_messages([
-            ("system", """Generate 3-5 specific, practical related questions based on the ANSWER CONTENT and policy.
+            ("system", """Generate 3-5 specific, practical related questions that users might ask about this policy.
 
-CRITICAL: Questions MUST be CONTEXTUAL to the answer given, NOT generic!
-
-❌ BAD (Generic): "What are the eligibility criteria in POL-IT-001?"
-✅ GOOD (Contextual): "What is the approval timeline for laptop requests?"
-
-Use the ANSWER CONTENT below to generate questions that naturally follow from what was just explained.
-Make questions practical, actionable, and specific to the topic discussed.
+Questions should:
+- Be directly answerable from the policy content shown
+- Be specific and actionable
+- Cover different aspects (eligibility, process, exceptions, requirements)
+- Sound like real employee questions
 
 Return JSON: {"questions": ["Question 1?", "Question 2?", "Question 3?"]}
+
 Output ONLY valid JSON with a "questions" array."""),
             ("user", """Policy: {policy_number}
 Original Question: {original_question}
 
-ANSWER JUST PROVIDED (use this for context):
-{answer_text}
-
 Policy Content:
 {context}
 
-Generate 3-5 contextual related questions based on the answer above.""")
+Generate 3-5 related questions.""")
         ])
         
         # Trace collector
         self.trace_collector = TraceCollector()
-    
+        
     def _load_vector_store(self) -> Chroma:
         """Load the vector store"""
         logger.info("Loading vector store...")
@@ -137,7 +121,6 @@ Generate 3-5 contextual related questions based on the answer above.""")
             embedding_function=embeddings,
             collection_name=Config.COLLECTION_NAME
         )
-        
         return vector_store
     
     def _extract_json_from_response(self, content: str) -> Dict[str, Any]:
@@ -155,18 +138,19 @@ Generate 3-5 contextual related questions based on the answer above.""")
             return {}
     
     def generate_answer(
-        self,
-        question: str,
-        intent: Any,
+        self, 
+        question: str, 
+        intent: Any, 
         selected_policy: str,
         docs: List[Document]
     ) -> Tuple[PolicyAnswer, float]:
         """Generate structured answer from documents"""
         start_time = time.time()
+        
         try:
             # Prepare context - use MORE context for better answers
             context = "\n\n".join([
-                f"[Section {i+1}]\n{doc.page_content}"
+                f"[Section {i+1}]\n{doc.page_content}" 
                 for i, doc in enumerate(docs[:8])  # Use top 8 chunks for more context
             ])
             
@@ -198,11 +182,13 @@ Generate 3-5 contextual related questions based on the answer above.""")
             
             duration = time.time() - start_time
             logger.info(f"Generated answer in {duration:.2f}s")
+            
             return answer, duration
             
         except Exception as e:
             logger.error(f"Error generating answer: {e}")
             duration = time.time() - start_time
+            
             # Fallback answer
             return PolicyAnswer(
                 answer="I found relevant information but encountered an error generating a detailed answer. Please refer to the policy document.",
@@ -216,20 +202,18 @@ Generate 3-5 contextual related questions based on the answer above.""")
         self,
         question: str,
         policy_number: str,
-        answer_text: str,  # FIX #2: Added answer_text parameter for context
         docs: List[Document]
     ) -> Tuple[List[str], float]:
         """Generate related questions from policy content"""
         start_time = time.time()
+        
         try:
             # Use first 3 chunks for context
             context = "\n\n".join([doc.page_content for doc in docs[:3]])
             
-            # FIX #2: Pass answer_text to prompt for contextual questions
             prompt = self.related_questions_prompt.format_messages(
                 policy_number=policy_number,
                 original_question=question,
-                answer_text=answer_text,  # NEW: Use answer for context
                 context=context
             )
             
@@ -262,11 +246,13 @@ Generate 3-5 contextual related questions based on the answer above.""")
             
             duration = time.time() - start_time
             logger.info(f"Generated {len(cleaned)} related questions in {duration:.2f}s")
+            
             return cleaned, duration
             
         except Exception as e:
             logger.error(f"Error generating related questions: {e}")
             duration = time.time() - start_time
+            
             return [
                 f"What are the eligibility criteria in {policy_number}?",
                 f"What documents do I need for {policy_number}?",
@@ -299,7 +285,7 @@ Generate 3-5 contextual related questions based on the answer above.""")
             
             # STEP 2: Multi-Query Retrieval
             docs, retrieval_metadata = self.retriever.retrieve(
-                question,
+                question, 
                 k=8,  # Get more chunks for better context
                 use_multi_query=use_multi_query
             )
@@ -321,6 +307,7 @@ Generate 3-5 contextual related questions based on the answer above.""")
             
             # Get policy distribution
             policy_summary = self.retriever.get_policy_summary(docs)
+            
             self.trace_collector.add_step(
                 "Policy Selection & Intent Matching",
                 {
@@ -356,9 +343,9 @@ Generate 3-5 contextual related questions based on the answer above.""")
                 answer_duration
             )
             
-            # STEP 5: Related Questions (FIX #2: Pass answer text)
+            # STEP 5: Related Questions
             related_questions, related_duration = self.generate_related_questions(
-                question, policy_selection.selected_policy, answer.answer, filtered_docs
+                question, policy_selection.selected_policy, filtered_docs
             )
             
             self.trace_collector.add_step(
@@ -398,10 +385,12 @@ Generate 3-5 contextual related questions based on the answer above.""")
             
             logger.info(f"Query completed in {total_duration:.2f}s")
             logger.info("=" * 60)
+            
             return response
             
         except Exception as e:
             logger.error(f"Error processing query: {e}", exc_info=True)
+            
             return {
                 "success": False,
                 "question": question,

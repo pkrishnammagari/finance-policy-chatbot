@@ -97,11 +97,17 @@ st.markdown("""
     }
     
     div[data-testid="stExpander"] summary {
-        background-color: #1e40af !important;
+        background-color: #10b981 !important;
         color: white !important;
         padding: 0.75rem 1rem !important;
         border-radius: 6px !important;
         font-weight: 600 !important;
+    }
+    
+    /* FORCE EXPANDER HEADER TEXT TO WHITE */
+    div[data-testid="stExpander"] summary,
+    div[data-testid="stExpander"] summary * {
+        color: white !important;
     }
     
     /* Header */
@@ -273,6 +279,15 @@ st.markdown("""
         background-color: #1e3a8a !important;
     }
     
+    /* FORCE ALL BUTTON TEXT TO WHITE (override global dark text) */
+    .stButton button,
+    .stButton button *,
+    .stButton button span,
+    .stButton button p,
+    .stButton button div {
+        color: white !important;
+    }
+    
     /* Trace */
     .trace-step {
         background-color: #ffffff;
@@ -391,22 +406,6 @@ for entry in st.session_state.chat_history:
     </div>
     """, unsafe_allow_html=True)
     
-    # RELATED QUESTIONS - CLICKABLE BUTTONS
-    related_questions = response.get('related_questions', [])
-    if related_questions:
-        st.markdown("""
-        <div class="related-questions">
-            <span class="title">💡 Related Questions</span>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        cols = st.columns(1)
-        for i, question in enumerate(related_questions):
-            if st.button(f"❓ {question}", key=f"rq_{entry['question'][:20]}_{i}", use_container_width=True):
-                st.session_state.selected_question = question
-                st.session_state.query_count += 1
-                st.rerun()
-    
     # AI REASONING TRACE
     with st.expander("🔍 View AI Reasoning Process", expanded=False):
         trace = response.get('trace', {})
@@ -436,6 +435,23 @@ for entry in st.session_state.chat_history:
         else:
             st.info("No trace data available for this query.")
 
+    
+    # RELATED QUESTIONS - CLICKABLE BUTTONS
+    related_questions = response.get('related_questions', [])
+    if related_questions:
+        st.markdown("""
+        <div class="related-questions">
+            <span class="title">💡 Related Questions</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        cols = st.columns(1)
+        for i, question in enumerate(related_questions):
+            if st.button(f"❓ {question}", key=f"rq_{entry['question'][:20]}_{i}", use_container_width=True):
+                st.session_state.selected_question = question
+                st.session_state.query_count += 1
+                st.rerun()
+    
 # Input section
 st.markdown("---")
 st.markdown('<h3 style="color: #1f2937 !important; font-weight: 600;">💬 Ask a Question</h3>', unsafe_allow_html=True)
