@@ -1,5 +1,5 @@
 """
-Finance House Policy Assistant - FINAL - ALL TEXT DARK (NUCLEAR OPTION)
+Finance House Policy Assistant - WITH CLICKABLE RELATED QUESTIONS
 """
 import sys
 from pathlib import Path
@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# NUCLEAR CSS - FORCE DARK TEXT ON EVERY SINGLE STREAMLIT ELEMENT
+# CSS - ALL TEXT DARK + RELATED QUESTIONS STYLING
 st.markdown("""
 <style>
     /* GLOBAL FORCE: WHITE BACKGROUND, DARK TEXT */
@@ -68,7 +68,7 @@ st.markdown("""
         color: #1f2937 !important;
     }
     
-    /* SPINNER TEXT - THE PROBLEM CHILD */
+    /* SPINNER TEXT */
     .stSpinner,
     .stSpinner > div,
     .stSpinner > div > div,
@@ -219,6 +219,25 @@ st.markdown("""
         border: 1px solid #e5e7eb;
     }
     
+    /* RELATED QUESTIONS SECTION */
+    .related-questions {
+        background-color: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-left: 4px solid #0ea5e9;
+        padding: 1rem;
+        margin: 1rem 0;
+        border-radius: 8px;
+    }
+    
+    .related-questions .title {
+        color: #0c4a6e !important;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        margin-bottom: 0.75rem;
+        display: block;
+    }
+    
     /* Text input */
     .stTextInput input {
         background-color: #ffffff !important;
@@ -284,6 +303,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Initialize session state
 if 'rag_chain' not in st.session_state:
     with st.spinner("🔄 Initializing Policy Assistant..."):
         st.session_state.rag_chain = FinanceHousePolicyChain()
@@ -294,6 +314,10 @@ if 'chat_history' not in st.session_state:
 if 'query_count' not in st.session_state:
     st.session_state.query_count = 0
 
+if 'selected_question' not in st.session_state:
+    st.session_state.selected_question = None
+
+# Sidebar
 with st.sidebar:
     st.markdown("## 📚 About")
     st.markdown("""
@@ -317,8 +341,10 @@ with st.sidebar:
     if st.button("🗑️ Clear Chat", use_container_width=True):
         st.session_state.chat_history = []
         st.session_state.query_count = 0
+        st.session_state.selected_question = None
         st.rerun()
 
+# Main content
 st.markdown("""
 <div class="main-header">
     <h1>🏦 Finance House Policy Assistant</h1>
@@ -326,6 +352,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# Display chat history
 for entry in st.session_state.chat_history:
     st.markdown(f"""
     <div class="user-question">
@@ -364,6 +391,23 @@ for entry in st.session_state.chat_history:
     </div>
     """, unsafe_allow_html=True)
     
+    # RELATED QUESTIONS - CLICKABLE BUTTONS
+    related_questions = response.get('related_questions', [])
+    if related_questions:
+        st.markdown("""
+        <div class="related-questions">
+            <span class="title">💡 Related Questions</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        cols = st.columns(1)
+        for i, question in enumerate(related_questions):
+            if st.button(f"❓ {question}", key=f"rq_{entry['question'][:20]}_{i}", use_container_width=True):
+                st.session_state.selected_question = question
+                st.session_state.query_count += 1
+                st.rerun()
+    
+    # AI REASONING TRACE
     with st.expander("🔍 View AI Reasoning Process", expanded=False):
         trace = response.get('trace', {})
         if trace and 'steps' in trace:
@@ -392,6 +436,7 @@ for entry in st.session_state.chat_history:
         else:
             st.info("No trace data available for this query.")
 
+# Input section
 st.markdown("---")
 st.markdown('<h3 style="color: #1f2937 !important; font-weight: 600;">💬 Ask a Question</h3>', unsafe_allow_html=True)
 
@@ -400,6 +445,7 @@ col1, col2 = st.columns([5, 1])
 with col1:
     user_question = st.text_input(
         "Type your policy question here...",
+        value="",
         key=f"user_input_{st.session_state.query_count}",
         placeholder="e.g., Can I work from home?",
         label_visibility="collapsed"
@@ -408,6 +454,13 @@ with col1:
 with col2:
     ask_button = st.button("Send", type="primary", use_container_width=True)
 
+# Auto-process if related question was clicked
+if st.session_state.selected_question and not ask_button:
+    user_question = st.session_state.selected_question
+    st.session_state.selected_question = None  # Clear it now
+    ask_button = True  # Simulate button click
+
+# Process the question (either manual or auto-triggered)
 if ask_button and user_question:
     with st.spinner("🔄 Processing your question..."):
         response = st.session_state.rag_chain.query(user_question)
@@ -420,4 +473,4 @@ if ask_button and user_question:
             st.session_state.query_count += 1
             st.rerun()
         else:
-            st.error(f"Error: {response.get('error', 'Unknown error occurred')}")
+            st.error(f"❌ Error: {response.get('error', 'Unknown error occurred')}")
