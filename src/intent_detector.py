@@ -7,7 +7,7 @@ import json
 import re
 from typing import List, Dict, Any, Tuple
 from collections import Counter
-from langchain_ollama import ChatOllama
+from langchain_groq import ChatGroq
 from langchain.schema import Document
 from langchain.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
@@ -36,11 +36,10 @@ class IntentDetector:
     """
     
     def __init__(self):
-        self.llm = ChatOllama(
-            model=Config.LLM_MODEL,
-            base_url=Config.OLLAMA_BASE_URL,
+        self.llm = ChatGroq(
+            model_name="llama3-8b-8192", 
             temperature=0.2,
-            format='json'  # Request JSON output
+            model_kwargs={"response_format": {"type": "json_object"}}
         )
         
         self.intent_prompt = ChatPromptTemplate.from_messages([
@@ -137,11 +136,10 @@ class PolicySelector:
     """
     
     def __init__(self):
-        self.llm = ChatOllama(
-            model=Config.LLM_MODEL,
-            base_url=Config.OLLAMA_BASE_URL,
+        self.llm = ChatGroq(
+            model_name="llama3-8b-8192", 
             temperature=0.2,
-            format='json'
+            model_kwargs={"response_format": {"type": "json_object"}}
         )
         
         self.selection_prompt = ChatPromptTemplate.from_messages([
