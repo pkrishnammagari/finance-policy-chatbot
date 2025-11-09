@@ -1,18 +1,4 @@
 [server]
-maxUploadSize = 200
-enableCORS = false
-enableXsrfProtection = true
-
-[browser]
-gatherUsageStats = false
-
-[theme]
-primaryColor = "#4CAF50"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F2F6"
-textColor = "#1E1E1E"
-font = "sans serif"
-
 folderWatchBlacklist = [
     "venv",
     ".venv",
