@@ -57,8 +57,12 @@ class Config:
     @classmethod
     def validate(cls):
         """Validate configuration"""
+        if os.environ.get("STREAMLIT_CLOUD", "false").lower() == "true":
+            # Skip policies directory check on Streamlit Cloud deployment
+            return
         if not cls.POLICIES_DIR.exists():
             raise FileNotFoundError(f"Policies directory not found: {cls.POLICIES_DIR}")
+
         logger.info(f"Configuration validated successfully")
         return True
 
