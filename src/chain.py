@@ -11,7 +11,6 @@ from langchain_community.vectorstores import Chroma
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import Document
 from pydantic import BaseModel, Field
-
 from src.utils import Config, Timer, TraceCollector, logger
 from src.embeddings import VectorStoreManager
 from src.retriever import PolicyRetriever
@@ -418,7 +417,6 @@ Generate 3-5 contextual related questions based on the answer above.""")
 # Streamlit Cloud helpers and factories
 # =============================================================================
 import os
-from langchain_ollama import OllamaEmbeddings
 from langchain_community.vectorstores import Chroma
 
 def is_streamlit_cloud() -> bool:
@@ -431,9 +429,9 @@ def create_inference_chain(vector_store: Chroma | None = None):
     Loads a prebuilt Chroma index from CHROMA_PERSIST_DIR without rebuilding.
     """
     if vector_store is None:
-        embeddings = OllamaEmbeddings(
-            model=Config.EMBEDDING_MODEL,
-            base_url=Config.OLLAMA_BASE_URL,
+        # FIX: Use the correct HuggingFace embeddings
+        embeddings = HuggingFaceEmbeddings(
+            model_name="all-MiniLM-L6-v2"
         )
         vector_store = Chroma(
             persist_directory=Config.CHROMA_PERSIST_DIR,
