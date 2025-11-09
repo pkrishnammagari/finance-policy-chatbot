@@ -5,7 +5,8 @@ import time
 import json
 import re
 from typing import Dict, Any, List, Tuple
-from langchain_ollama import ChatOllama, OllamaEmbeddings
+from langchain_groq import ChatGroq
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import Document
@@ -42,12 +43,7 @@ class FinanceHousePolicyChain:
         self.policy_selector = PolicySelector()
         
         # Initialize LLM for answer generation
-        self.llm = ChatOllama(
-            model=Config.LLM_MODEL,
-            base_url=Config.OLLAMA_BASE_URL,
-            temperature=0.1,  # Lower for more factual
-            format='json'
-        )
+        self.llm = ChatGroq(model_name="llama3-8b-8192", model_kwargs={"response_format": {"type": "json_object"}})
         
         # IMPROVED answer generation prompt WITH OPINION GUARDRAIL (FIX #1)
         self.answer_prompt = ChatPromptTemplate.from_messages([
@@ -126,10 +122,8 @@ Generate 3-5 contextual related questions based on the answer above.""")
     def _load_vector_store(self) -> Chroma:
         """Load the vector store"""
         logger.info("Loading vector store...")
-        embeddings = OllamaEmbeddings(
-            model=Config.EMBEDDING_MODEL,
-            base_url=Config.OLLAMA_BASE_URL
-        )
+        # Automatically uses OPENAI_API_KEY from environment secrets
+        embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
         
         vector_store = Chroma(
             persist_directory=Config.CHROMA_PERSIST_DIR,

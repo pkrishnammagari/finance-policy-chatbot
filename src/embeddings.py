@@ -6,8 +6,9 @@ from pathlib import Path
 from typing import List, Dict, Any
 from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_ollama import OllamaEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
+from langchain_groq import ChatGroq
 from langchain.schema import Document
 from src.utils import Config, Timer, logger, extract_policy_metadata
 
@@ -115,10 +116,8 @@ class VectorStoreManager:
     def __init__(self, persist_dir: str = None, collection_name: str = None):
         self.persist_dir = persist_dir or Config.CHROMA_PERSIST_DIR
         self.collection_name = collection_name or Config.COLLECTION_NAME
-        self.embeddings = OllamaEmbeddings(
-            model=Config.EMBEDDING_MODEL,
-            base_url=Config.OLLAMA_BASE_URL
-        )
+        # THIS IS THE LINE THAT FIXES THE CRASH
+        self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2") 
         self.vector_store = None
         
     def create_vector_store(self, chunks: List[Document], force_recreate: bool = False) -> Chroma:

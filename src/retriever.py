@@ -3,14 +3,14 @@ Multi-query retriever and advanced retrieval strategies for Finance House Policy
 """
 import time
 from typing import List, Dict, Any, Tuple
-from langchain_ollama import ChatOllama
-from langchain_ollama import OllamaEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
 from langchain.schema import Document
 from langchain.prompts import ChatPromptTemplate
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from src.utils import Config, Timer, logger
+from langchain_groq import ChatGroq
 
 
 class MultiQueryOutput(BaseModel):
@@ -27,11 +27,7 @@ class MultiQueryRetriever:
     
     def __init__(self, vector_store: Chroma = None):
         self.vector_store = vector_store
-        self.llm = ChatOllama(
-            model=Config.LLM_MODEL,
-            base_url=Config.OLLAMA_BASE_URL,
-            temperature=0.3
-        )
+        self.llm = ChatGroq(model_name="llama3-8b-8192", model_kwargs={"response_format": {"type": "json_object"}})
         self.parser = PydanticOutputParser(pydantic_object=MultiQueryOutput)
         
         # Multi-query generation prompt
@@ -244,8 +240,8 @@ class PolicyRetriever:
 
 def test_retriever():
     """Test the retriever module"""
-    from langchain_ollama import OllamaEmbeddings
-    from langchain_community.vectorstores import Chroma
+    from langchain_community.embeddings import HuggingFaceEmbeddings # <-- Import change
+    from langchain_chroma import Chroma      # <-- Also update this import
     
     print("=" * 60)
     print("TESTING MULTI-QUERY RETRIEVER")
@@ -254,53 +250,9 @@ def test_retriever():
     # Load vector store
     vector_store = Chroma(
         persist_directory=Config.CHROMA_PERSIST_DIR,
-        embedding_function=OllamaEmbeddings(
-            model=Config.EMBEDDING_MODEL,
-            base_url=Config.OLLAMA_BASE_URL
-        ),
+        embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2"),
         collection_name=Config.COLLECTION_NAME
-    )
-    
-    # Initialize retriever
-    retriever = PolicyRetriever(vector_store)
-    
-    # Test queries
-    test_queries = [
-        "Can I work from home?",
-        "What laptop can I get?",
-        "How much vacation do I have?"
-    ]
-    
-    for query in test_queries:
-        print(f"\n{'=' * 60}")
-        print(f"Query: {query}")
-        print("=" * 60)
-        
-        # Retrieve with multi-query
-        docs, metadata = retriever.retrieve(query, k=3, use_multi_query=True)
-        
-        print(f"\nGenerated Queries:")
-        for i, q in enumerate(metadata["generated_queries"], 1):
-            print(f"  {i}. {q}")
-        
-        print(f"\nRetrieval Results:")
-        print(f"  Total docs retrieved: {metadata['total_docs_retrieved']}")
-        print(f"  Unique docs: {metadata['unique_docs']}")
-        print(f"  Duration: {metadata['total_duration']:.2f}s")
-        
-        # Policy summary
-        summary = retriever.get_policy_summary(docs)
-        print(f"\nPolicy Distribution:")
-        for policy, count in summary["policy_distribution"].items():
-            print(f"  {policy}: {count} chunks")
-        
-        print(f"\nTop Result:")
-        if docs:
-            top_doc = docs[0]
-            print(f"  Policy: {top_doc.metadata.get('policy_number', 'Unknown')}")
-            print(f"  Domain: {top_doc.metadata.get('domain', 'Unknown')}")
-            print(f"  Preview: {top_doc.page_content[:150]}...")
-
+        )
 
 if __name__ == "__main__":
     test_retriever()
