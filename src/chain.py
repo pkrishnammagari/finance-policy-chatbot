@@ -424,56 +424,39 @@ Generate 3-5 contextual related questions based on the answer above.""")
                 "trace": {}
             }
 
-    # ============================================================================
-# STREAMLIT CLOUD DEPLOYMENT HELPERS
-# ============================================================================
+# =============================================================================
+# Streamlit Cloud helpers and factories
+# =============================================================================
+import os
+from langchain_ollama import OllamaEmbeddings
+from langchain_community.vectorstores import Chroma
 
-    def is_streamlit_cloud():
-        """Detect if running on Streamlit Cloud"""
-        import os
-        return os.environ.get('STREAMLIT_CLOUD', 'false').lower() == 'true'
+def is_streamlit_cloud() -> bool:
+    """Detect Streamlit Cloud via env var."""
+    return os.environ.get("STREAMLIT_CLOUD", "false").lower() == "true"
 
-    def create_inference_chain(vector_store=None):
-        """
-        Create lightweight inference-only chain for Streamlit Cloud.
-        Skips heavy embedding building, uses pre-loaded vector store.
-        
-        Args:
-            vector_store: Optional pre-loaded Chroma vector store
-            
-        Returns:
-            FinanceHousePolicyChain instance
-        """
-        import streamlit as st
-        from langchain_ollama import OllamaEmbeddings
-        from langchain_community.vectorstores import Chroma
-        from src.utils import Config, logger
-        
-        logger.info("Creating inference-only chain for Streamlit Cloud")
-        
-        if vector_store is None:
-            # Load existing vector store (must be pre-built locally)
-            logger.info(f"Loading pre-built vector store from {Config.CHROMA_PERSIST_DIR}")
-            embeddings = OllamaEmbeddings(
-                model=Config.EMBEDDING_MODEL,
-                base_url=Config.OLLAMA_BASE_URL
-            )
-            vector_store = Chroma(
-                persist_directory=Config.CHROMA_PERSIST_DIR,
-                embedding_function=embeddings,
-                collection_name=Config.COLLECTION_NAME
-            )
-        
-        # Create chain with pre-loaded vector store
-        chain = FinanceHousePolicyChain(vector_store=vector_store)
-        logger.info("Inference chain created successfully")
-        return chain
+def create_inference_chain(vector_store: Chroma | None = None):
+    """
+    Lightweight factory for Streamlit Cloud.
+    Loads a prebuilt Chroma index from CHROMA_PERSIST_DIR without rebuilding.
+    """
+    if vector_store is None:
+        embeddings = OllamaEmbeddings(
+            model=Config.EMBEDDING_MODEL,
+            base_url=Config.OLLAMA_BASE_URL,
+        )
+        vector_store = Chroma(
+            persist_directory=Config.CHROMA_PERSIST_DIR,
+            embedding_function=embeddings,
+            collection_name=Config.COLLECTION_NAME,
+        )
+    return FinanceHousePolicyChain(vector_store=vector_store)
 
-    def create_full_chain():
-        """
-        Create full chain with embedding building for local development.
-        This is the original initialization logic.
-        """
-        return FinanceHousePolicyChain()
+def create_full_chain():
+    """
+    Full factory for local use (uses the class’s internal loader).
+    """
+    return FinanceHousePolicyChain()
+
 
 
