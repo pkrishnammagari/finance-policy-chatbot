@@ -8,8 +8,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import streamlit as st
 import os
 
-# Import chain module
-from src.chain import FinanceHousePolicyChain, create_inference_chain, create_full_chain, is_streamlit_cloud
+# Import factory chain functions and environment check
+from src.chain import create_inference_chain, create_full_chain, is_streamlit_cloud
 
 st.set_page_config(
     page_title="Finance House Policy Assistant",
@@ -18,18 +18,14 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS - ALL TEXT DARK + RELATED QUESTIONS STYLING
 st.markdown("""
 <style>
-    /* Force all text to be dark */
     .stMarkdown, .stMarkdown p, .stMarkdown li, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
         color: #1e1e1e !important;
     }
     .stTextInput label, .stButton button {
         color: #1e1e1e !important;
     }
-    
-    /* Related questions styling */
     .related-question {
         background-color: #f0f2f6;
         border-left: 3px solid #4CAF50;
@@ -46,22 +42,17 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize session state
 @st.cache_resource
 def load_rag_chain():
-    """Load RAG chain with caching - optimized for Streamlit Cloud"""
     if is_streamlit_cloud():
-        # Lightweight inference mode for Streamlit Cloud
         return create_inference_chain()
     else:
-        # Full mode for local development
         return create_full_chain()
 
-# Initialize chain
 if 'rag_chain' not in st.session_state:
     with st.spinner("🔄 Initializing Policy Assistant..."):
         st.session_state.rag_chain = load_rag_chain()
-
+        
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 

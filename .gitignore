@@ -29,11 +29,11 @@ env/
 .streamlit/
 
 # Heavy Assets - DO NOT PUSH TO GIT
-assets/chroma_db/
+# assets/chroma_db/
 data/policies/
-*.bin
-*.sqlite3
-*.db
+#*.bin
+#*.sqlite3
+#*.db
 
 # Models and Large Files
 models/
