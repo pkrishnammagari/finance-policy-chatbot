@@ -2,17 +2,12 @@
 Utility functions for Finance House Policy Chatbot
 """
 import os
-import sys
 import time
 import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any
 from dotenv import load_dotenv
-
-# Add project root to path
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
 
 # Load environment variables
 load_dotenv()

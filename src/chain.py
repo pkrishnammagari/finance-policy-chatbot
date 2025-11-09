@@ -1,10 +1,6 @@
 """
 Complete RAG Chain orchestration for Finance House Policy Chatbot - IMPROVED WITH SAFE FIXES
 """
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import time
 import json
 import re

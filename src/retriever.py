@@ -1,10 +1,6 @@
 """
 Multi-query retriever and advanced retrieval strategies for Finance House Policy Chatbot
 """
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import time
 from typing import List, Dict, Any, Tuple
 from langchain_ollama import ChatOllama

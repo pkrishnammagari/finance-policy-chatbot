@@ -1,9 +1,6 @@
 """
 Intent detection and policy selection for Finance House Policy Chatbot
 """
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import time
 import json

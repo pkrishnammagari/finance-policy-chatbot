@@ -1,10 +1,6 @@
 """
 Finance House Policy Assistant - Streamlit Cloud Optimized UI
 """
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import streamlit as st
 import os
 
@@ -52,7 +48,7 @@ def load_rag_chain():
 if 'rag_chain' not in st.session_state:
     with st.spinner("🔄 Initializing Policy Assistant..."):
         st.session_state.rag_chain = load_rag_chain()
-        
+
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 
